@@ -1,37 +1,33 @@
-import { Logger } from '@nestjs/common';
-import {
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  OnGatewayInit,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
-} from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Logger } from "@nestjs/common";
+import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { Server, Socket } from "socket.io";
 
 @WebSocketGateway({ cors: true })
-export class AppGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
-  private logger: Logger = new Logger('AppGateWay');
+  private logger: Logger = new Logger("AppGateWay");
+  private users = [];
 
-  @SubscribeMessage('msgToServer')
+  @SubscribeMessage("msgToServer")
   handleMessage(client: Socket, payload: string): void {
-    console.log(payload);
-    this.server.emit('msgToClient', payload, client.id);
+    this.server.emit("msgToClient", payload, client.id);
   }
+
+  // @SubscribeMessage('userToServer')
+  // handleUsers(client: Socket, payload: string): void {
+  //   console.log()
+  // }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   afterInit(server: Server) {
-    this.logger.log('Init');
+    this.logger.log("Init");
   }
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+    // this.logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    // this.logger.log(`Client disconnected: ${client.id}`);
   }
 }
