@@ -2,22 +2,29 @@ import { Logger } from "@nestjs/common";
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 
+type Message = { id: string; receiverId: string; text: string; name };
+
 @WebSocketGateway({ cors: true })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger: Logger = new Logger("AppGateWay");
   private users = [];
 
-  @SubscribeMessage("msgToServer")
-  handleMessage(client: Socket, payload: string): void {
-    console.log(payload);
-    this.server.emit("msgToClient", payload, client.id);
-  }
-
   @SubscribeMessage("addUser")
   handleUsers(client: Socket, payload: string): void {
     this.addUsers(payload, client.id);
     this.server.emit("getUsers", this.users);
+  }
+
+  @SubscribeMessage("sendMessage")
+  handleMessage(client: Socket, { id, receiverId, text, name }: Message): void {
+    const user = this.getUser(receiverId);
+    this.server.to(user.soketId).emit("getMessage", {
+      id,
+      receiverId,
+      text,
+      name,
+    });
   }
 
   addUsers(payload: string, client: string): void {
@@ -29,8 +36,9 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     this.users = this.users.filter(user => user.soketId !== socketId);
   }
 
-  addUser(userId: string) {
-    return this.users.find(user => user.id === userId);
+  getUser(userId: string) {
+    const user = this.users.find(user => user.id === userId);
+    return user;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
