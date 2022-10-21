@@ -1,8 +1,7 @@
 import { Logger } from "@nestjs/common";
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
-
-type Message = { id: string; receiverId: string; text: string; name };
+import { Message } from "./types/message-types";
 
 @WebSocketGateway({ cors: true })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -11,7 +10,7 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   private users = [];
 
   @SubscribeMessage("addUser")
-  handleUsers(client: Socket, payload: string): void {
+  handleUsers(client: Socket, payload: Message): void {
     this.addUsers(payload, client.id);
     this.server.emit("getUsers", this.users);
   }
@@ -27,8 +26,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     });
   }
 
-  addUsers(payload: string, client: string): void {
-    const { id, name }: any = payload;
+  addUsers(payload: Message, client: string): void {
+    const { id, name } = payload;
     !this.users.some(user => user.id === id) && this.users.push({ id, name, soketId: client });
   }
 
@@ -41,18 +40,17 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     return user;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   afterInit(server: Server) {
     this.logger.log("Init");
   }
 
   handleConnection(client: Socket) {
-    // this.logger.log(`Client connected: ${client.id}`);
+    this.logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
     this.removeUser(client.id);
     this.server.emit("getUsers", this.users);
-    // this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 }
